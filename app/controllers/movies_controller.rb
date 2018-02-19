@@ -12,28 +12,31 @@ class MoviesController < ApplicationController
 
   def index
 
+    #defs
     @movies = Movie.all
+    @param_sort = params[:param_sort]
+    @param_rating = params[:ratings]
     @all_ratings = Movie.all_ratings
+
     redirect = false
     
-    logger.debug(session.inspect)
-    
-    if params[:sort_by]
-      @sort_by = params[:sort_by]
-      session[:sort_by] = params[:sort_by]
-    elsif session[:sort_by]
-      @sort_by = session[:sort_by]
+    #session
+    if :param_sort
+      session[:param_sort] = params[:param_sort]
+    elsif session[:param_sort]
+      @param_sort = session[:param_sort]
       redirect = true
     else
-      @sort_by = nil
+      @param_sort = nil
     end
     
-    if params[:commit] == "Refresh" and params[:ratings].nil?
+    #keep settings if refresh
+    if params[:commit] == "Refresh" and @param_rating.nil?
       @ratings = nil
       session[:ratings] = nil
-    elsif params[:ratings]
-      @ratings = params[:ratings]
-      session[:ratings] = params[:ratings]
+    elsif @param_rating
+      @ratings = @param_rating
+      session[:ratings] = @param_rating
     elsif session[:ratings]
       @ratings = session[:ratings]
       redirect = true
@@ -43,15 +46,16 @@ class MoviesController < ApplicationController
     
     if redirect
       flash.keep
-      redirect_to movies_path :sort_by=>@sort_by, :ratings=>@ratings
+      redirect_to movies_path :param_sort=>@param_sort, :ratings=>@ratings
     end
     
-    if @ratings and @sort_by
-      @movies = Movie.where(:rating => @ratings.keys).order(params[:sort_by])
+    #control logic for sorts/filters
+    if @ratings and @param_sort
+      @movies = Movie.where(:rating => @ratings.keys).order(@param_sort)
+    elsif @param_sort
+      @movies = Movie.order(@param_sort)
     elsif @ratings
       @movies = Movie.where(:rating => @ratings.keys)
-    elsif @sort_by
-      @movies = Movie.order(params[:sort_by])
     else
       @movie = Movie.all
     end
